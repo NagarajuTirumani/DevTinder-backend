@@ -1,16 +1,23 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 
 const { connectDB } = require("./config/database");
-
 const UserModel = require("./models/users");
+const { validateSignUpData } = require("./utils/validation");
 
 const app = express();
+const saltRounds = 10;
 
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
   try {
-    const user = new UserModel(req.body);
+    // validate password
+    validateSignUpData(req.body);
+
+    const { password } = req.body;
+    const hashPassword = await bcrypt.hash(password, saltRounds);
+    const user = new UserModel({ ...req.body, password: hashPassword });
     const resp = await user.save();
     if (resp) {
       res.send("User Created Successfully!");
@@ -18,7 +25,7 @@ app.post("/signup", async (req, res) => {
       res.status(500).send("Failed To Create User!!!!");
     }
   } catch (err) {
-    res.status(500).send(err);
+    res.status(500).send(err.message);
   }
 });
 

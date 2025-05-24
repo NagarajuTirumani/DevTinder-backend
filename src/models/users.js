@@ -8,6 +8,8 @@ const userSchema = new Schema(
     firstName: {
       type: String,
       required: true,
+      minLength: 4,
+      maxLength: 50,
     },
     lastName: {
       type: String,
@@ -19,7 +21,6 @@ const userSchema = new Schema(
       lowercase: true,
       unique: true,
       trim: true,
-      // match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g,
       validate(value) {
         if (!validator.isEmail(value)) {
           throw new Error("Invalid Email " + value);
