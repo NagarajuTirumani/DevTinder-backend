@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const { connectDB } = require("./config/database");
 const UserModel = require("./models/users");
@@ -10,6 +12,7 @@ const app = express();
 const saltRounds = 10;
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   try {
@@ -43,10 +46,27 @@ app.post("/login", async (req, res) => {
     }
     const isPasswordMatched = await bcrypt.compare(password, user.password);
     if (isPasswordMatched) {
+      const token = jwt.sign({ _id: user._id }, "PRIVATE_AUTH_KEY");
+      res.cookie("access_token", token);
       res.send("User Login Successfully....");
     } else {
       throw new Error("Invalid Credentials");
     }
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+app.get("/profile", async (req, res) => {
+  const { access_token } = req.cookies;
+  try {
+    if (!access_token) {
+      throw new Error("Please login first.");
+    }
+    const decodedUser = jwt.verify(access_token, "PRIVATE_AUTH_KEY");
+    const { _id } = decodedUser;
+    const user = await UserModel.findById({ _id });
+    res.send(user);
   } catch (error) {
     res.status(500).send(error.message);
   }
