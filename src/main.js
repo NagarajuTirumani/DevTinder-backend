@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
@@ -7,9 +9,11 @@ const cookieParser = require("cookie-parser");
 const { connectDB } = require("./config/database");
 const UserModel = require("./models/users");
 const { validateSignUpData } = require("./utils/validation");
+const { authUser } = require("./middleware/auth");
 
 const app = express();
 const saltRounds = 10;
+const { JWT_SECRET_AUTH_KEY } = process.env;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -46,9 +50,13 @@ app.post("/login", async (req, res) => {
     }
     const isPasswordMatched = await bcrypt.compare(password, user.password);
     if (isPasswordMatched) {
-      const token = jwt.sign({ _id: user._id }, "PRIVATE_AUTH_KEY");
-      res.cookie("access_token", token);
-      res.send("User Login Successfully....");
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET_AUTH_KEY, {
+        expiresIn: 24 * 60 * 60,
+      }); //expires mention in sec
+      res.cookie("access_token", token, {
+        expires: new Date(Date.now() + 24 * 3600000),
+      });
+      res.send("User Login Successful");
     } else {
       throw new Error("Invalid Credentials");
     }
@@ -57,15 +65,9 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
-  const { access_token } = req.cookies;
+app.get("/profile", authUser, async (req, res) => {
   try {
-    if (!access_token) {
-      throw new Error("Please login first.");
-    }
-    const decodedUser = jwt.verify(access_token, "PRIVATE_AUTH_KEY");
-    const { _id } = decodedUser;
-    const user = await UserModel.findById({ _id });
+    const { user } = req.body;
     res.send(user);
   } catch (error) {
     res.status(500).send(error.message);
@@ -132,7 +134,6 @@ app.patch("/user", async (req, res) => {
 
 connectDB()
   .then((res) => {
-    console.log("database connected successfully");
     app.listen(3000, () => {
       console.log("code is listening at", 3000);
     });
