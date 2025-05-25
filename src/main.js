@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 const express = require("express");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
@@ -13,7 +12,6 @@ const { authUser } = require("./middleware/auth");
 
 const app = express();
 const saltRounds = 10;
-const { JWT_SECRET_AUTH_KEY } = process.env;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -48,11 +46,9 @@ app.post("/login", async (req, res) => {
     if (!user) {
       throw new Error("Invalid Credentials");
     }
-    const isPasswordMatched = await bcrypt.compare(password, user.password);
+    const isPasswordMatched = await user.isValidPassword(password);
     if (isPasswordMatched) {
-      const token = jwt.sign({ _id: user._id }, JWT_SECRET_AUTH_KEY, {
-        expiresIn: 24 * 60 * 60,
-      }); //expires mention in sec
+      const token = user.createJWT();
       res.cookie("access_token", token, {
         expires: new Date(Date.now() + 24 * 3600000),
       });
