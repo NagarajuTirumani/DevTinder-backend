@@ -1,9 +1,10 @@
 const express = require("express");
 const UserModel = require("../models/users");
+const { authUser } = require('../middleware/auth');
 
 const feedRouter = express.Router();
 
-feedRouter.get("/feed", async (req, res) => {
+feedRouter.get("/feed", authUser, async (req, res) => {
   try {
     const users = await UserModel.find({});
     res.send(users);

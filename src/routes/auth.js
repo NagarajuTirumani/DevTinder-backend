@@ -3,6 +3,7 @@ const validator = require("validator");
 const bcrypt = require("bcrypt");
 const { validateSignUpData } = require("../utils/validation");
 const UserModel = require("../models/users");
+const { authUser } = require("../middleware/auth");
 
 const authRouter = express.Router();
 
@@ -53,7 +54,13 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.delete("/user", async (req, res) => {
+authRouter.post("/logout", async (req, res) => {
+  // need to do cleanup activities of app here then will logout
+  res.clearCookie("access_token");
+  res.send("Logout Successfully.....");
+});
+
+authRouter.delete("/user", authUser, async (req, res) => {
   const id = req.body._id;
   try {
     if (!id) {
@@ -71,7 +78,7 @@ authRouter.delete("/user", async (req, res) => {
   }
 });
 
-authRouter.patch("/user", async (req, res) => {
+authRouter.patch("/user", authUser, async (req, res) => {
   const { _id, ...restData } = req.body;
   const allowedFeilds = [
     "firstName",
