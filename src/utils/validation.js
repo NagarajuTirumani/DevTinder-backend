@@ -29,7 +29,17 @@ const validateEditUserData = (req) => {
   }
 };
 
+const validatePasswordUpdateData = (req) => {
+  const { email, newPassword } = req.body;
+  if (!validator.isEmail(email)) {
+    throw new Error('Invalid Email');
+  } else if (!validator.isStrongPassword(newPassword)){
+    throw new Error("Please enter a strong password");
+  }
+};
+
 module.exports = {
   validateSignUpData,
   validateEditUserData,
+  validatePasswordUpdateData,
 };
