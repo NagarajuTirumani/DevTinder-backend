@@ -17,8 +17,8 @@ const requestSchema = new Schema(
       require: true,
       enum: {
         values: ["interested", "ignored"],
-        message: `{VALUE} is invalid status`
-      }
+        message: `{VALUE} is invalid status`,
+      },
     },
   },
   {
@@ -26,12 +26,14 @@ const requestSchema = new Schema(
   }
 );
 
-requestSchema.pre('save', function(next) {
-    const request = this;
-    if (request.toUserId.equals(request.fromUserId)) {
-        throw new Error("you cannot send request to yourself!");
-    }
-    next();
+requestSchema.index({ fromUserId: 1, toUserId: 1 });
+
+requestSchema.pre("save", function (next) {
+  const request = this;
+  if (request.toUserId.equals(request.fromUserId)) {
+    throw new Error("you cannot send request to yourself!");
+  }
+  next();
 });
 
 const RequestModel = model("requests", requestSchema);
