@@ -44,7 +44,7 @@ profileRouter.patch("/profile/password", async (req, res) => {
     if (!user) {
       throw new Error("Invalid User Credentials");
     }
-    const isPasswordMatched = await bcrypt.compare(password, user.password);
+    const isPasswordMatched = await user.isValidPassword(password);
     if (!isPasswordMatched) {
       throw new Error("Invalid User Credentials");
     }
