@@ -54,4 +54,35 @@ requestRouter.post(
   }
 );
 
+requestRouter.post(
+  "/request/review/:status/:requestId",
+  authUser,
+  async (req, res) => {
+    try {
+      const currentUser = req.body.user;
+      const { status, requestId } = req.params;
+      const allowedStatus = ["accepted", "rejected"];
+      if (!allowedStatus.includes(status)) {
+        throw new Error("Invalid Status");
+      }
+      const request = await RequestModel.findOne({
+        _id: requestId,
+        toUserId: currentUser._id,
+        status: "interested",
+      });
+      if (!request) {
+        throw new Error("Request Not Found!");
+      }
+      request.status = status;
+      await request.save();
+      res.json({
+        message: status + " successfully",
+        data: request,
+      });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+);
+
 module.exports = requestRouter;

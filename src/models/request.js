@@ -16,7 +16,7 @@ const requestSchema = new Schema(
       type: String,
       require: true,
       enum: {
-        values: ["interested", "ignored"],
+        values: ["interested", "ignored", "accepted", "rejected"],
         message: `{VALUE} is invalid status`,
       },
     },
