@@ -74,10 +74,10 @@ requestRouter.post(
         throw new Error("Request Not Found!");
       }
       request.status = status;
-      await request.save();
+      const data = await request.save();
       res.json({
         message: status + " successfully",
-        data: request,
+        data: data,
       });
     } catch (error) {
       res.status(400).json({ message: error.message });

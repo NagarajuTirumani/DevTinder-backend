@@ -7,10 +7,12 @@ const requestSchema = new Schema(
     fromUserId: {
       type: mongoose.Types.ObjectId,
       require: true,
+      ref: "user",
     },
     toUserId: {
       type: mongoose.Types.ObjectId,
       require: true,
+      ref: "user",
     },
     status: {
       type: String,

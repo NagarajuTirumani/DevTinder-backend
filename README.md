@@ -20,8 +20,8 @@
 - POST /request/review/rejected/:requestId
 
 ### UserFeed
-- GET /connections
-- GET /requests/received
-- GET /feed - gives the profiles on the platform
+- GET /user/connections
+- GET /user/requests/pending
+- GET /user/feed - gives the profiles on the platform
 
 Status - ignore, interested, accepted, rejected
