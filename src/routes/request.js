@@ -41,7 +41,7 @@ requestRouter.post(
         fromUserId,
       });
       await request.save();
-      res.send({
+      res.json({
         message: "request sent successfully",
         data: request,
       });

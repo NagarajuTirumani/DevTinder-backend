@@ -19,12 +19,19 @@ authRouter.post("/signup", async (req, res) => {
     const user = new UserModel({ ...req.body, password: hashPassword });
     const resp = await user.save();
     if (resp) {
-      res.send("User Created Successfully!");
+      res.json({
+        message: "User Created Successfully!",
+        data: resp,
+      });
     } else {
-      res.status(500).send("Failed To Create User!!!!");
+      res.status(400).json({
+        message: "Failed To Create User!!!!",
+      });
     }
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(400).json({
+      message: err.message,
+    });
   }
 });
 
@@ -45,36 +52,36 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("access_token", token, {
         expires: new Date(Date.now() + 24 * 3600000),
       });
-      res.send("User Login Successful");
+      res.json({ message: "User Login Successful" });
     } else {
       throw new Error("Invalid Credentials");
     }
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(400).json({ message: error.message });
   }
 });
 
 authRouter.post("/logout", async (req, res) => {
   // need to do cleanup activities of app here then will logout
   res.clearCookie("access_token");
-  res.send("Logout Successfully.....");
+  res.json({ message: "Logout Successfully....." });
 });
 
 authRouter.delete("/user", authUser, async (req, res) => {
   const id = req.body._id;
   try {
     if (!id) {
-      res.status(404).send("User Not Found To Delete");
+      res.status(400).json({ message: "User Not Found To Delete" });
       return;
     }
     const deletedUser = await UserModel.findByIdAndDelete(id);
     if (deletedUser) {
-      res.send("User deleted successfully...");
+      res.json({ message: "User deleted successfully..." });
     } else {
-      res.status(404).send("User Not Found To Delete");
+      res.status(400).json({ message: "User Not Found To Delete" });
     }
   } catch (error) {
-    res.status(404).send("User Not Found To Delete");
+    res.status(400).json({ message: "User Not Found To Delete" });
   }
 });
 
@@ -103,9 +110,9 @@ authRouter.patch("/user", authUser, async (req, res) => {
       runValidators: true,
       returnOriginal: false,
     });
-    res.send(user);
+    res.json({ message: "User Updated Successfully!", data: user });
   } catch (error) {
-    res.status(500).send("Fail to Update: " + error.message);
+    res.status(400).json({ message: "Fail to Update: " + error.message });
   }
 });
 

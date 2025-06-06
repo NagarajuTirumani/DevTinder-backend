@@ -15,9 +15,9 @@ const profileRouter = express.Router();
 profileRouter.get("/profile/view", authUser, async (req, res) => {
   try {
     const { user } = req.body;
-    res.send(user);
+    res.json({ message: "Fetched Profile Successfully!", data: user });
   } catch (error) {
-    res.status(500).send(error.message);
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -32,7 +32,7 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
       data: user,
     });
   } catch (error) {
-    res.status(500).send("Fail to Update: " + error.message);
+    res.status(400).json({ message: "Fail to Update: " + error.message });
   }
 });
 
@@ -55,7 +55,7 @@ profileRouter.patch("/profile/password", async (req, res) => {
       data: user,
     });
   } catch (error) {
-    res.status(500).send("Fail to Update: " + error.message);
+    res.status(400).json({ message: "Fail to Update: " + error.message });
   }
 });
 

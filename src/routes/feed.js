@@ -63,18 +63,40 @@ feedRouter.get("/user/connections", authUser, async (req, res) => {
   }
 });
 
-feedRouter.get("/feed", authUser, async (req, res) => {
+feedRouter.get("/user/feed", authUser, async (req, res) => {
   try {
-    const users = await UserModel.find({
-      email: { $not: { $eq: req.body.user.email } },
+    const currentUser = req.body.user;
+
+    let { page = 1, limit = 10 } = req.query;
+    limit = limit > 50 ? 50 : limit;
+    const skip = (page - 1) * limit;
+
+    const connectionRequests = await RequestModel.find({
+      $or: [{ toUserId: currentUser._id }, { fromUserId: currentUser._id }],
     });
+
+    const connectionsSet = new Set();
+
+    connectionRequests.map((request) => {
+      connectionsSet.add(request.fromUserId.toString());
+      connectionsSet.add(request.toUserId.toString());
+    });
+
+    const users = await UserModel.find({
+      _id: { $nin: Array.from(connectionsSet) },
+      email: { $not: { $eq: req.body.user.email } },
+    })
+      .select(REQUIRED_FEILDS)
+      .skip(skip)
+      .limit(limit);
+
     res.json({
       message: "fetched users successfully",
       data: users,
     });
   } catch (error) {
     res.status(400).json({
-      message: "Something went wrong while getting users list",
+      message: error.message,
       data: null,
     });
   }
