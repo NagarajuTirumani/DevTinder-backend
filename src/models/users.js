@@ -62,6 +62,15 @@ const userSchema = new Schema(
       type: String,
       default: "Hi, I am a Software developer",
     },
+    imgUrl: {
+      type: String,
+      default: "https://cdn.vectorstock.com/i/1000v/54/69/male-user-icon-vector-8865469.jpg",
+      validate(value) {
+        if (!validator.isURL(value)) {
+          throw new Error("URL is invalid")
+        }
+      },
+    }
   },
   { timestamps: true }
 );

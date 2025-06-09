@@ -14,6 +14,7 @@ const validateEditUserData = (req) => {
     "lastName",
     "age",
     "gender",
+    "imgUrl",
     "skills",
     "about",
   ];

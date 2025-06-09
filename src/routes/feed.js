@@ -13,6 +13,7 @@ const REQUIRED_FEILDS = [
   "gender",
   "skills",
   "about",
+  "imgUrl",
 ];
 
 feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
