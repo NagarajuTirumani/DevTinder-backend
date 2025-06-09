@@ -9,7 +9,7 @@ const authUser = async (req, res, next) => {
 
   try {
     if (!access_token) {
-      throw new Error("Please login first.");
+      return res.status(401).json({message: "Please login first."});
     }
 
     const { JWT_SECRET_AUTH_KEY } = process.env;

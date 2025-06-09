@@ -64,7 +64,7 @@ authRouter.post("/login", async (req, res) => {
 authRouter.post("/logout", async (req, res) => {
   // need to do cleanup activities of app here then will logout
   res.clearCookie("access_token");
-  res.json({ message: "Logout Successfully....." });
+  res.json({ message: "Logout Successful" });
 });
 
 authRouter.delete("/user", authUser, async (req, res) => {
