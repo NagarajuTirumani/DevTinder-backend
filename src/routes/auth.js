@@ -1,22 +1,66 @@
 const express = require("express");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
-const { validateSignUpData } = require("../utils/validation");
+const otpGenerator = require("otp-generator");
+
 const UserModel = require("../models/users");
-const { authUser } = require("../middleware/auth");
+const OTPModel = require("../models/otp");
+const { authUser, validateOTP } = require("../middleware/auth");
+const { validateSignUpData } = require("../utils/validation");
 
 const authRouter = express.Router();
 
 const saltRounds = 10;
+
+authRouter.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!validator.isEmail(email)) {
+      throw new Error("Invalid Email!");
+    }
+    // const isOTPRequestExist = await OTPModel.findOne({ email });
+    // if (isOTPRequestExist) {
+    //   throw new Error("OTP Sent Already!");
+    // }
+    const otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      specialChars: false,
+      lowerCaseAlphabets: false,
+    });
+    const OTP = new OTPModel({
+      email,
+      otp: otp,
+    });
+    await OTP.save();
+    res.json({
+      message: "OTP Sent to your email!",
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message || "Something Went Wrong!",
+    });
+  }
+});
 
 authRouter.post("/signup", async (req, res) => {
   try {
     // validate password
     validateSignUpData(req.body);
 
-    const { password } = req.body;
+    const { password, otp, ...rest } = req.body;
+
+    const isUserExist = await UserModel.findOne({ email: req.body.email });
+    if (isUserExist) {
+      throw new Error("User Already Exist! Please to login.");
+    }
+
+    const isValidOTP = await validateOTP(req);
+    if (!isValidOTP) {
+      throw new Error("Invalid OTP");
+    }
+
     const hashPassword = await bcrypt.hash(password, saltRounds);
-    const user = new UserModel({ ...req.body, password: hashPassword });
+    const user = new UserModel({ ...rest, password: hashPassword });
     const resp = await user.save();
     const token = user.createJWT();
     if (resp) {

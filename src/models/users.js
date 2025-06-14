@@ -15,10 +15,12 @@ const userSchema = new Schema(
       required: true,
       minLength: 4,
       maxLength: 50,
+      trim: true,
     },
     lastName: {
       type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
@@ -61,6 +63,7 @@ const userSchema = new Schema(
     about: {
       type: String,
       default: "Hi, I am a Software developer",
+      trim: true,
     },
     imgUrl: {
       type: String,

@@ -3,13 +3,14 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
 const UserModel = require("../models/users");
+const OTPModel = require("../models/otp");
 
 const authUser = async (req, res, next) => {
   const { access_token } = req.cookies;
 
   try {
     if (!access_token) {
-      return res.status(401).json({message: "Please login first."});
+      return res.status(401).json({ message: "Please login first." });
     }
 
     const { JWT_SECRET_AUTH_KEY } = process.env;
@@ -29,6 +30,18 @@ const authUser = async (req, res, next) => {
   }
 };
 
+const validateOTP = async (req) => {
+  const { email, otp } = req.body;
+  const response = await OTPModel.find({ email })
+    .sort({ createdAt: -1 })
+    .limit(1);
+  if (response.length === 0 || otp !== response[0].otp) {
+    return false;
+  }
+  return true;
+};
+
 module.exports = {
   authUser,
+  validateOTP,
 };

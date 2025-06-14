@@ -1,9 +1,12 @@
 const validator = require("validator");
 
 const validateSignUpData = (data) => {
-  const { password } = data;
+  const { password, otp } = data;
   if (!validator.isStrongPassword(password)) {
     throw new Error("Please enter a strong password");
+  }
+  if (!otp || otp.length !== 6) {
+    throw new Error("Invalid OTP");
   }
 };
 
