@@ -18,7 +18,11 @@ authRouter.post("/signup", async (req, res) => {
     const hashPassword = await bcrypt.hash(password, saltRounds);
     const user = new UserModel({ ...req.body, password: hashPassword });
     const resp = await user.save();
+    const token = user.createJWT();
     if (resp) {
+      res.cookie("access_token", token, {
+        expires: new Date(Date.now() + 24 * 3600000),
+      });
       res.json({
         message: "User Created Successfully!",
         data: resp,
