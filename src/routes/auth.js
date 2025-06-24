@@ -14,7 +14,7 @@ const saltRounds = 10;
 
 authRouter.post("/send-otp", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, firstName, lastName } = req.body;
     if (!validator.isEmail(email)) {
       throw new Error("Invalid Email!");
     }
@@ -28,6 +28,8 @@ authRouter.post("/send-otp", async (req, res) => {
       lowerCaseAlphabets: false,
     });
     const OTP = new OTPModel({
+      firstName,
+      lastName,
       email,
       otp: otp,
     });

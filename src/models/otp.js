@@ -7,6 +7,20 @@ const nodemailer = require("nodemailer");
 const { Schema, model } = mongoose;
 
 const otpSchema = new Schema({
+  firstName: {
+    type: String,
+    required: true,
+    minLength: 4,
+    maxLength: 50,
+    trim: true,
+  },
+  lastName: {
+    type: String,
+    required: true,
+    minLength: 4,
+    maxLength: 50,
+    trim: true,
+  },
   email: {
     type: String,
     required: true,
@@ -33,6 +47,7 @@ otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
 
 otpSchema.pre("save", async function (next) {
   const { EMAIL_USER, EMAIL_PASSWORD } = process.env;
+  const { firstName, lastName, otp, email } = this;
   try {
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -45,12 +60,12 @@ otpSchema.pre("save", async function (next) {
     });
 
     await transporter.sendMail({
-      from: `"Dev Tinder" <${EMAIL_USER}>`,
-      to: this.email,
+      from: `"Dev Tinder." <${EMAIL_USER}>`,
+      to: email,
       subject: "OTP for DevTinder Registration",
       html: `
-        <p>Hi, Welcome to DevTinder!</p>
-        <p>Your Code is <span style="font-weight: bold;">${this.otp}</span>. It will be valid for 5 min only.</p>
+        <p>Hi ${firstName} ${lastName}, Welcome to DevTinder!</p>
+        <p>Your Code is <span style="font-weight: bold;">${otp}</span>. It will be valid for 5 min only.</p>
         <p>If you didn't request this, simply ignore this message</p>
 
         <p>
