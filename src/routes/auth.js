@@ -18,10 +18,12 @@ authRouter.post("/send-otp", async (req, res) => {
     if (!validator.isEmail(email)) {
       throw new Error("Invalid Email!");
     }
-    // const isOTPRequestExist = await OTPModel.findOne({ email });
-    // if (isOTPRequestExist) {
-    //   throw new Error("OTP Sent Already!");
-    // }
+
+    const isUserExist = await UserModel.findOne({ email });
+    if (isUserExist) {
+      throw new Error("User is already exit with this email. Please Login!");
+    }
+    
     const otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       specialChars: false,
