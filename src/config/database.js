@@ -1,4 +1,3 @@
-require("dotenv").config();
 const mongoose = require("mongoose");
 
 const { MONGODB_CLUSTER, MONGODB_NAME } = process.env;
