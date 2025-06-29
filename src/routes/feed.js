@@ -1,4 +1,6 @@
 const express = require("express");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const UserModel = require("../models/users");
 const { authUser } = require("../middleware/auth");
@@ -13,8 +15,23 @@ const REQUIRED_FEILDS = [
   "gender",
   "skills",
   "about",
-  "imgUrl",
+  "imgId",
 ];
+
+const {
+  AWS_BUCKET_REGION,
+  AWS_ACCESS_KEY,
+  AWS_SECRET_ACCESS_KEY,
+  AWS_BUCKET_NAME,
+} = process.env;
+
+const client = new S3Client({
+  region: AWS_BUCKET_REGION,
+  credentials: {
+    accessKeyId: AWS_ACCESS_KEY,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
   try {
@@ -91,9 +108,21 @@ feedRouter.get("/user/feed", authUser, async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    const updatedUsers = await Promise.all(
+      users.map(async (user) => {
+        if (!user.imgId) return user;
+        const command = new GetObjectCommand({
+          Bucket: AWS_BUCKET_NAME,
+          Key: user.imgId,
+        });
+        const imgUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
+        return { ...user, imgUrl };
+      })
+    );
+
     res.json({
       message: "fetched users successfully",
-      data: users,
+      data: updatedUsers,
     });
   } catch (error) {
     res.status(400).json({

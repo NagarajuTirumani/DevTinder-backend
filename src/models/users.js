@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { uuid: uuidv4} = require('uuid');
 
 const { Schema } = mongoose;
 
@@ -64,14 +65,9 @@ const userSchema = new Schema(
       default: "Hi, I am a Software developer",
       trim: true,
     },
-    imgUrl: {
+    imgId: {
       type: String,
-      default: "https://cdn.vectorstock.com/i/1000v/54/69/male-user-icon-vector-8865469.jpg",
-      validate(value) {
-        if (!validator.isURL(value)) {
-          throw new Error("URL is invalid")
-        }
-      },
+      default: () => uuidv4(),
     }
   },
   { timestamps: true }

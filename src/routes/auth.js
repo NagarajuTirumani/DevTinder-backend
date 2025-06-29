@@ -2,6 +2,10 @@ const express = require("express");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 const otpGenerator = require("otp-generator");
+const multer = require("multer");
+const sharp = require("sharp");
+const { v4: uuidv4 } = require("uuid");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const UserModel = require("../models/users");
 const OTPModel = require("../models/otp");
@@ -10,7 +14,25 @@ const { validateSignUpData } = require("../utils/validation");
 
 const authRouter = express.Router();
 
+const {
+  AWS_BUCKET_REGION,
+  AWS_BUCKET_NAME,
+  AWS_ACCESS_KEY,
+  AWS_SECRET_ACCESS_KEY,
+} = process.env;
+
 const saltRounds = 10;
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+const client = new S3Client({
+  region: AWS_BUCKET_REGION,
+  credentials: {
+    accessKeyId: AWS_ACCESS_KEY,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 authRouter.post("/send-otp", async (req, res) => {
   try {
@@ -46,14 +68,17 @@ authRouter.post("/send-otp", async (req, res) => {
   }
 });
 
-authRouter.post("/signup", async (req, res) => {
+authRouter.post("/signup", upload.single("profilePhoto"), async (req, res) => {
   try {
+    const file = req.file;
+    const body = req.body;
+
     // validate password
-    validateSignUpData(req.body);
+    validateSignUpData(body);
 
-    const { password, otp, ...rest } = req.body;
+    const { password, otp, ...rest } = body;
 
-    const isUserExist = await UserModel.findOne({ email: req.body.email });
+    const isUserExist = await UserModel.findOne({ email: body.email });
     if (isUserExist) {
       throw new Error("User Already Exist! Please to login.");
     }
@@ -63,8 +88,29 @@ authRouter.post("/signup", async (req, res) => {
       throw new Error("Invalid OTP");
     }
 
+    const buffer = await sharp(file.buffer)
+      .resize({
+        height: 1920,
+        width: 1080,
+        fit: "contain",
+      })
+      .toBuffer();
+
+    const fileName = uuidv4();
+
+    const params = {
+      Bucket: AWS_BUCKET_NAME,
+      Key: `${fileName}`,
+      Body: buffer,
+      fileType: file.mimetype
+    };
+
+    const command = new PutObjectCommand(params);
+
+    await client.send(command);
+
     const hashPassword = await bcrypt.hash(password, saltRounds);
-    const user = new UserModel({ ...rest, password: hashPassword });
+    const user = new UserModel({ ...rest, password: hashPassword, imgId: fileName });
     const resp = await user.save();
     const token = user.createJWT();
     if (resp) {
