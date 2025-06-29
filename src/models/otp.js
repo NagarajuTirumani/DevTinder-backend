@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
-const nodemailer = require("nodemailer");
+const { sendEmail } = require("../utils/email");
 
 const { Schema, model } = mongoose;
 
@@ -44,24 +44,12 @@ const otpSchema = new Schema({
 otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 300 });
 
 otpSchema.pre("save", async function (next) {
-  const { EMAIL_USER, EMAIL_PASSWORD } = process.env;
   const { firstName, lastName, otp, email } = this;
   try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"Dev Tinder." <${EMAIL_USER}>`,
-      to: email,
+    await sendEmail({
       subject: "OTP for DevTinder Registration",
-      html: `
+      toEmail: email,
+      template: `
         <p>Hi ${firstName} ${lastName}, Welcome to DevTinder!</p>
         <p>Your Code is <span style="font-weight: bold;">${otp}</span>. It will be valid for 5 min only.</p>
         <p>If you didn't request this, simply ignore this message</p>
@@ -70,7 +58,7 @@ otpSchema.pre("save", async function (next) {
             <span>yours,</span><br/>
             <span>The DevTinder Team</span>
         </p>
-    `,
+      `,
     });
     next();
   } catch (error) {
