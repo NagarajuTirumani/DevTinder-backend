@@ -1,10 +1,9 @@
 const express = require("express");
-const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const UserModel = require("../models/users");
 const { authUser } = require("../middleware/auth");
 const RequestModel = require("../models/request");
+const { getSignedUrlFromImgId } = require("../utils/common");
 
 const feedRouter = express.Router();
 
@@ -18,21 +17,6 @@ const REQUIRED_FEILDS = [
   "imgId",
 ];
 
-const {
-  AWS_BUCKET_REGION,
-  AWS_ACCESS_KEY,
-  AWS_SECRET_ACCESS_KEY,
-  AWS_BUCKET_NAME,
-} = process.env;
-
-const client = new S3Client({
-  region: AWS_BUCKET_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  },
-});
-
 feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
   try {
     const currentUser = req.body.user;
@@ -41,9 +25,24 @@ feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
       status: "interested",
     }).populate("fromUserId", REQUIRED_FEILDS);
 
+    const updatedRequests = await Promise.all(
+      requests.map(async (request) => {
+        if (!request?.fromUserId?.imgId) return request;
+        const imgUrl = await getSignedUrlFromImgId(request.fromUserId);
+        const requestObj = request.toObject();
+        return {
+          ...requestObj,
+          fromUserId: {
+            ...request.fromUserId.toObject(),
+            imgUrl,
+          },
+        };
+      })
+    );
+
     res.json({
       message: "fetching connections successfully!",
-      data: requests,
+      data: updatedRequests,
     });
   } catch (error) {
     res.status(400).json({
@@ -70,9 +69,17 @@ feedRouter.get("/user/connections", authUser, async (req, res) => {
       return connection.fromUserId;
     });
 
+    const updatedUsers = await Promise.all(
+      data.map(async (connection) => {
+        if (!connection.imgId) return connection;
+        const imgUrl = await getSignedUrlFromImgId(connection);
+        return { ...connection.toObject(), imgUrl };
+      })
+    );
+
     res.json({
       message: "fetched connections successfully",
-      data: data,
+      data: updatedUsers,
     });
   } catch (error) {
     res.status(400).json({
@@ -111,12 +118,8 @@ feedRouter.get("/user/feed", authUser, async (req, res) => {
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
         if (!user.imgId) return user;
-        const command = new GetObjectCommand({
-          Bucket: AWS_BUCKET_NAME,
-          Key: user.imgId,
-        });
-        const imgUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
-        return { ...user, imgUrl };
+        const imgUrl = await getSignedUrlFromImgId(user);
+        return { ...user.toObject(), imgUrl };
       })
     );
 
