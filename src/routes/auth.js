@@ -11,6 +11,7 @@ const UserModel = require("../models/users");
 const OTPModel = require("../models/otp");
 const { authUser, validateOTP } = require("../middleware/auth");
 const { validateSignUpData } = require("../utils/validation");
+const { getSignedUrlFromImgId } = require('../utils/common');
 
 const authRouter = express.Router();
 
@@ -150,7 +151,14 @@ authRouter.post("/login", async (req, res) => {
       res.cookie("access_token", token, {
         expires: new Date(Date.now() + 24 * 3600000),
       });
-      res.json({ message: "User Login Successful", data: user });
+      let updatedUser;
+      if (!user.imgId){
+        updatedUser = user;
+      } else {
+        const imgUrl = await getSignedUrlFromImgId(user);
+        updatedUser = { ...user.toObject(), imgUrl };
+      }
+      res.json({ message: "User Login Successful", data: updatedUser });
     } else {
       throw new Error("Invalid Credentials");
     }

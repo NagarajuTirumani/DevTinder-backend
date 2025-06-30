@@ -7,6 +7,7 @@ const {
   validatePasswordUpdateData,
 } = require("../utils/validation");
 const UserModel = require("../models/users");
+const { getSignedUrlFromImgId } = require("../utils/common");
 
 const saltRounds = 10;
 
@@ -15,7 +16,14 @@ const profileRouter = express.Router();
 profileRouter.get("/profile/view", authUser, async (req, res) => {
   try {
     const { user } = req.body;
-    res.json({ message: "Fetched Profile Successfully!", data: user });
+    let updatedUser;
+    if (!user.imgId){
+      updatedUser = user;
+    } else {
+      const imgUrl = await getSignedUrlFromImgId(user);
+      updatedUser = { ...user.toObject(), imgUrl };
+    }
+    res.json({ message: "Fetched Profile Successfully!", data: updatedUser });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
