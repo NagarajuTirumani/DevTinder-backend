@@ -11,7 +11,7 @@ const UserModel = require("../models/users");
 const OTPModel = require("../models/otp");
 const { authUser, validateOTP } = require("../middleware/auth");
 const { validateSignUpData } = require("../utils/validation");
-const { getSignedUrlFromImgId } = require('../utils/common');
+const { getSignedUrlFromImgId } = require("../utils/common");
 
 const authRouter = express.Router();
 
@@ -46,7 +46,7 @@ authRouter.post("/send-otp", async (req, res) => {
     if (isUserExist) {
       throw new Error("User is already exit with this email. Please Login!");
     }
-    
+
     const otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
       specialChars: false,
@@ -91,7 +91,7 @@ authRouter.post("/signup", upload.single("profilePhoto"), async (req, res) => {
 
     const buffer = await sharp(file.buffer)
       .resize({
-        height: 1920,
+        height: 1080,
         width: 1080,
         fit: "contain",
       })
@@ -103,7 +103,7 @@ authRouter.post("/signup", upload.single("profilePhoto"), async (req, res) => {
       Bucket: AWS_BUCKET_NAME,
       Key: `${fileName}`,
       Body: buffer,
-      fileType: file.mimetype
+      fileType: file.mimetype,
     };
 
     const command = new PutObjectCommand(params);
@@ -111,16 +111,27 @@ authRouter.post("/signup", upload.single("profilePhoto"), async (req, res) => {
     await client.send(command);
 
     const hashPassword = await bcrypt.hash(password, saltRounds);
-    const user = new UserModel({ ...rest, password: hashPassword, imgId: fileName });
+    const user = new UserModel({
+      ...rest,
+      password: hashPassword,
+      imgId: fileName,
+    });
     const resp = await user.save();
     const token = user.createJWT();
+    let updatedResponse;
+    if (resp.imgId) {
+      const imgUrl = await getSignedUrlFromImgId(resp);
+      updatedResponse = { ...resp.toObject(), imgUrl };
+    } else {
+      updatedResponse = resp;
+    }
     if (resp) {
       res.cookie("access_token", token, {
         expires: new Date(Date.now() + 24 * 3600000),
       });
       res.json({
         message: "User Created Successfully!",
-        data: resp,
+        data: updatedResponse,
       });
     } else {
       res.status(400).json({
@@ -152,7 +163,7 @@ authRouter.post("/login", async (req, res) => {
         expires: new Date(Date.now() + 24 * 3600000),
       });
       let updatedUser;
-      if (!user.imgId){
+      if (!user.imgId) {
         updatedUser = user;
       } else {
         const imgUrl = await getSignedUrlFromImgId(user);

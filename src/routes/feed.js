@@ -26,18 +26,20 @@ feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
     }).populate("fromUserId", REQUIRED_FEILDS);
 
     const updatedRequests = await Promise.all(
-      requests.map(async (request) => {
-        if (!request?.fromUserId?.imgId) return request;
-        const imgUrl = await getSignedUrlFromImgId(request.fromUserId);
-        const requestObj = request.toObject();
-        return {
-          ...requestObj,
-          fromUserId: {
-            ...request.fromUserId.toObject(),
-            imgUrl,
-          },
-        };
-      })
+      requests
+        .filter((request) => request.fromUserId)
+        .map(async (request) => {
+          if (!request?.fromUserId?.imgId) return request;
+          const imgUrl = await getSignedUrlFromImgId(request.fromUserId);
+          const requestObj = request.toObject();
+          return {
+            ...requestObj,
+            fromUserId: {
+              ...request.fromUserId.toObject(),
+              imgUrl,
+            },
+          };
+        })
     );
 
     res.json({
