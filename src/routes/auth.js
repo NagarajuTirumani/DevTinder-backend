@@ -89,30 +89,33 @@ authRouter.post("/signup", upload.single("profilePhoto"), async (req, res) => {
       throw new Error("Invalid OTP");
     }
 
-    const buffer = await sharp(file.buffer)
-      .resize({
-        height: 1080,
-        width: 1080,
-        fit: "contain",
-      })
-      .toBuffer();
-
     const fileName = uuidv4();
 
-    const params = {
-      Bucket: AWS_BUCKET_NAME,
-      Key: `${fileName}`,
-      Body: buffer,
-      fileType: file.mimetype,
-    };
+    if (file) {
+      const buffer = await sharp(file.buffer)
+        .resize({
+          height: 1080,
+          width: 1080,
+          fit: "contain",
+        })
+        .toBuffer();
 
-    const command = new PutObjectCommand(params);
+      const params = {
+        Bucket: AWS_BUCKET_NAME,
+        Key: `${fileName}`,
+        Body: buffer,
+        fileType: file.mimetype,
+      };
 
-    await client.send(command);
+      const command = new PutObjectCommand(params);
+
+      await client.send(command);
+    }
 
     const hashPassword = await bcrypt.hash(password, saltRounds);
     const user = new UserModel({
       ...rest,
+      skills: JSON.parse(rest.skills),
       password: hashPassword,
       imgId: fileName,
     });
@@ -184,53 +187,53 @@ authRouter.post("/logout", async (req, res) => {
   res.json({ message: "Logout Successful" });
 });
 
-authRouter.delete("/user", authUser, async (req, res) => {
-  const id = req.body._id;
-  try {
-    if (!id) {
-      res.status(400).json({ message: "User Not Found To Delete" });
-      return;
-    }
-    const deletedUser = await UserModel.findByIdAndDelete(id);
-    if (deletedUser) {
-      res.json({ message: "User deleted successfully..." });
-    } else {
-      res.status(400).json({ message: "User Not Found To Delete" });
-    }
-  } catch (error) {
-    res.status(400).json({ message: "User Not Found To Delete" });
-  }
-});
+// authRouter.delete("/user", authUser, async (req, res) => {
+//   const id = req.body._id;
+//   try {
+//     if (!id) {
+//       res.status(400).json({ message: "User Not Found To Delete" });
+//       return;
+//     }
+//     const deletedUser = await UserModel.findByIdAndDelete(id);
+//     if (deletedUser) {
+//       res.json({ message: "User deleted successfully..." });
+//     } else {
+//       res.status(400).json({ message: "User Not Found To Delete" });
+//     }
+//   } catch (error) {
+//     res.status(400).json({ message: "User Not Found To Delete" });
+//   }
+// });
 
-authRouter.patch("/user", authUser, async (req, res) => {
-  const { _id, ...restData } = req.body;
-  const allowedFeilds = [
-    "firstName",
-    "lastName",
-    "password",
-    "age",
-    "skills",
-    "about",
-  ];
-  const isAllowedDataToUpdate = Object.keys(restData).every((key) =>
-    allowedFeilds.includes(key)
-  );
-  try {
-    if (!isAllowedDataToUpdate) {
-      throw new Error(
-        "Some of these feilds are not allowed to update. Please check again"
-      );
-    } else if (restData?.skills?.length > 10) {
-      throw new Error("Max length for skill set is 10.");
-    }
-    const user = await UserModel.findByIdAndUpdate(_id, restData, {
-      runValidators: true,
-      returnOriginal: false,
-    });
-    res.json({ message: "User Updated Successfully!", data: user });
-  } catch (error) {
-    res.status(400).json({ message: "Fail to Update: " + error.message });
-  }
-});
+// authRouter.patch("/user", authUser, async (req, res) => {
+//   const { _id, ...restData } = req.body;
+//   const allowedFeilds = [
+//     "firstName",
+//     "lastName",
+//     "password",
+//     "age",
+//     "skills",
+//     "about",
+//   ];
+//   const isAllowedDataToUpdate = Object.keys(restData).every((key) =>
+//     allowedFeilds.includes(key)
+//   );
+//   try {
+//     if (!isAllowedDataToUpdate) {
+//       throw new Error(
+//         "Some of these feilds are not allowed to update. Please check again"
+//       );
+//     } else if (restData?.skills?.length > 10) {
+//       throw new Error("Max length for skill set is 10.");
+//     }
+//     const user = await UserModel.findByIdAndUpdate(_id, restData, {
+//       runValidators: true,
+//       returnOriginal: false,
+//     });
+//     res.json({ message: "User Updated Successfully!", data: user });
+//   } catch (error) {
+//     res.status(400).json({ message: "Fail to Update: " + error.message });
+//   }
+// });
 
 module.exports = authRouter;

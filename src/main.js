@@ -29,5 +29,5 @@ connectDB()
     });
   })
   .catch((err) => {
-    console.error("error while connecting db");
+    console.error("error while connecting db", err);
   });

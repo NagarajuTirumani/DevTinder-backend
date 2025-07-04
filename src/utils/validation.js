@@ -35,7 +35,7 @@ const validateEditUserData = (req) => {
     throw new Error(
       "Some of these feilds are not allowed to update. Please check again"
     );
-  } else if (restData?.skills?.length > 10) {
+  } else if (JSON.parse(restData?.skills)?.length > 10) {
     throw new Error("Max length for skill set is 10.");
   }
 };

@@ -11,7 +11,7 @@ requestRouter.post(
   authUser,
   async (req, res) => {
     try {
-      const currentUser = req.body.user;
+      const currentUser = req.user;
       const fromUserId = currentUser._id;
       const toUserId = req.params.toUserId;
       const status = req.params.status;
@@ -59,7 +59,7 @@ requestRouter.post(
   authUser,
   async (req, res) => {
     try {
-      const currentUser = req.body.user;
+      const currentUser = req.user;
       const { status, requestId } = req.params;
       const allowedStatus = ["accepted", "rejected"];
       if (!allowedStatus.includes(status)) {

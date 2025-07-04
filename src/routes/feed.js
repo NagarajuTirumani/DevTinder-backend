@@ -19,7 +19,7 @@ const REQUIRED_FEILDS = [
 
 feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
   try {
-    const currentUser = req.body.user;
+    const currentUser = req.user;
     const requests = await RequestModel.find({
       toUserId: currentUser._id,
       status: "interested",
@@ -55,7 +55,7 @@ feedRouter.get("/user/requests/pending", authUser, async (req, res) => {
 
 feedRouter.get("/user/connections", authUser, async (req, res) => {
   try {
-    const currentUser = req.body.user;
+    const currentUser = req.user;
 
     const connections = await RequestModel.find({
       status: "accepted",
@@ -92,7 +92,7 @@ feedRouter.get("/user/connections", authUser, async (req, res) => {
 
 feedRouter.get("/user/feed", authUser, async (req, res) => {
   try {
-    const currentUser = req.body.user;
+    const currentUser = req.user;
 
     let { page = 1, limit = 10 } = req.query;
     limit = limit > 50 ? 50 : limit;
@@ -111,7 +111,7 @@ feedRouter.get("/user/feed", authUser, async (req, res) => {
 
     const users = await UserModel.find({
       _id: { $nin: Array.from(connectionsSet) },
-      email: { $not: { $eq: req.body.user.email } },
+      email: { $not: { $eq: currentUser.email } },
     })
       .select(REQUIRED_FEILDS)
       .skip(skip)
