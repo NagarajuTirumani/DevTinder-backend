@@ -1,5 +1,6 @@
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const crypto = require("crypto");
 
 const {
   AWS_BUCKET_REGION,
@@ -25,4 +26,11 @@ const getSignedUrlFromImgId = async (user) => {
   return imgUrl;
 };
 
-module.exports = { getSignedUrlFromImgId };
+const generateRoomId = (id1, id2) => {
+  return crypto
+    .createHash("sha256")
+    .update([id1, id2].sort().join("_"))
+    .digest("base64url");
+};
+
+module.exports = { getSignedUrlFromImgId, generateRoomId };
