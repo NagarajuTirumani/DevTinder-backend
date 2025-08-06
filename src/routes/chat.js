@@ -1,6 +1,7 @@
 const express = require("express");
 const { authUser } = require("../middleware/auth");
 const { Chat } = require("../models/chat");
+const { getSignedUrlFromImgId } = require("../utils/common");
 
 const chatRouter = express.Router();
 
@@ -10,14 +11,33 @@ chatRouter.post("/chat", authUser, async (req, res) => {
   try {
     const chats = await Chat.findOne({
       participants: { $all: [toUserId, currentUser._id] },
-    });
+    }).populate("participants", ["imgId"]);
+
+    let chatDoc = chats.toObject();
+
+    if (!chats) {
+      throw new Error("No Chats Found!!!")
+    }
+
+    if (chatDoc.participants) {
+      chatDoc.participants = await Promise.all(
+        chatDoc.participants.map(async (participant) => {
+          if (participant.imgId) {
+            const imgUrl = await getSignedUrlFromImgId(participant);
+            return { ...participant, imgUrl };
+          }
+          return participant;
+        })
+      );
+    }
     res.json({
       message: "Messages Fetched",
-      data: chats,
+      data: chatDoc,
     });
   } catch (err) {
     res.status(400).json({
       message: err.message,
+      data: [],
     });
   }
 });

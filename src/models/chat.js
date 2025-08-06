@@ -4,7 +4,7 @@ const messageSchema = new Schema(
   {
     fromUserId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       require: true,
     },
     message: {
@@ -20,7 +20,7 @@ const chatSchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       require: true,
-      ref: "User",
+      ref: "user",
     },
   ],
   messages: [messageSchema],
