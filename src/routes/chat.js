@@ -11,7 +11,7 @@ chatRouter.post("/chat", authUser, async (req, res) => {
   try {
     const chats = await Chat.findOne({
       participants: { $all: [toUserId, currentUser._id] },
-    }).populate("participants", ["imgId"]);
+    }).populate("participants", ["imgId", "firstName", "lastName"]);
 
     let chatDoc = chats.toObject();
 
